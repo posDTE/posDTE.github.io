@@ -61,21 +61,39 @@
   const resultadoJson = document.getElementById("resultadoJson");
   const card = document.querySelector(".card-status");
 
+  const URL_FILE = "https://raw.githubusercontent.com/posDTE/posDTE.github.io/main/url";
+
   btn.addEventListener("click", async () => {
 
-    estadoTexto.innerText = "Consultando...";
+    estadoTexto.innerText = "Obteniendo URL base...";
     resultadoJson.innerText = "";
     card.classList.remove("border-success", "border-danger");
-    
+    estadoTexto.classList.remove("text-success", "text-danger");
+
     try {
 
-      const response = await fetch("https://claims-banners-incentives-reviewed.trycloudflare.com/enlinea");
-
-      if (!response.ok) {
-        throw new Error("Error HTTP: " + response.status);
+      // 🔥 1️⃣ Obtener URL base desde GitHub
+      const urlResponse = await fetch(URL_FILE + "?t=" + new Date().getTime()); 
+      if (!urlResponse.ok) {
+        throw new Error("No se pudo obtener archivo URL");
       }
 
-      const data = await response.json();
+      const baseUrl = (await urlResponse.text()).trim();
+
+      if (!baseUrl.startsWith("http")) {
+        throw new Error("URL base inválida");
+      }
+
+      estadoTexto.innerText = "Consultando API...";
+
+      // 🔥 2️⃣ Consultar /enlinea dinámicamente
+      const apiResponse = await fetch(baseUrl + "/enlinea");
+
+      if (!apiResponse.ok) {
+        throw new Error("Error HTTP: " + apiResponse.status);
+      }
+
+      const data = await apiResponse.json();
 
       estadoTexto.innerText = "API EN LÍNEA ✅";
       estadoTexto.classList.add("text-success");
@@ -86,12 +104,10 @@
     } catch (error) {
 
       estadoTexto.innerText = "API FUERA DE SERVICIO ❌";
-      estadoTexto.classList.remove("text-success");
       estadoTexto.classList.add("text-danger");
       card.classList.add("border", "border-danger");
 
       resultadoJson.innerText = error.toString();
-
     }
 
   });
